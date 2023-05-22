@@ -23,6 +23,9 @@ def get_2D_normalised():
     x_train = (x_train - mean) / std
     x_test = (x_test - mean) / std
     
+    y_train = y_train.ravel()
+    y_test = y_test.ravel()
+    
     return (x_train, y_train), (x_test, y_test)
 
 def test_dimensionality_reduction(components):
