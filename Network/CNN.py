@@ -26,9 +26,9 @@ class CNN_Network(BaseNetwork):
 
         conv_layers = get_all_classes(self.network, Conv2D)
         for layer in conv_layers:
-            scale = np.sqrt(2. / (layer.size[0] * layer.size[1] * c))
-            layer.weights = np.random.normal(loc=scale, scale=1., size=(
-                layer.size[0], layer.size[1], c, layer.filters))
+            scale = np.sqrt(2. / (layer.size[0] * layer.size[1] * c), dtype=FLOAT_DTYPE)
+            layer.weights = FLOAT_DTYPE(np.random.normal(loc=scale, scale=1., size=(
+                layer.size[0], layer.size[1], c, layer.filters)))
 
             layer.bias = np.zeros(shape=(layer.filters, ), dtype=FLOAT_DTYPE)
 
