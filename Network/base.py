@@ -1,38 +1,14 @@
-import numpy as np
-
-from tqdm import tqdm
 from time import time
-
-from constants import EPSILON, FLOAT_DTYPE
+import numpy as np
+from tqdm import tqdm
 from Callbacks import EarlyStopping, ReduceLR
-from Layers import Relu, Softmax, Dense
-from Utils.network import first_class, get_all_classes
+from constants import EPSILON
 
-
-class Network:
-    def __init__(self):
+class BaseNetwork:
+    def __init__(self) -> None:
         self.network = []  # layers
         self.architecture = []  # mapping input neurons --> output neurons
-        self.params = []  # W, b
         self.layers_size = len(self.network)
-
-    def add(self, layer):
-        """
-        Add layers to the network
-        """
-        reversed_layers = self.reverse_layers()
-        latest_dense = first_class(reversed_layers, Dense)
-        if layer.__class__ == Relu:
-            latest_dense.activation = 'relu'
-
-        if layer.__class__ == Softmax:
-            latest_dense.activation = 'softmax'
-
-        self.network.append(layer)
-        self.layers_size += 1
-
-    def reverse_layers(self):
-        return self.network[::-1]
 
     @staticmethod
     def generate_weight(shape, stddev):
@@ -41,37 +17,24 @@ class Network:
     @staticmethod
     def xavier_init(shape):
         stddev = np.sqrt(2 / (shape[0] + shape[1]))
-        return Network.generate_weight(shape, stddev)
+        return BaseNetwork.generate_weight(shape, stddev)
 
     @staticmethod
     def he_init(shape):
         stddev = np.sqrt(2 / shape[0])
-        return Network.generate_weight(shape, stddev)
+        return BaseNetwork.generate_weight(shape, stddev)
 
-    def _init_weights(self, input_shape):
+    def add_layer(self, layer):
         """
-        Initialize the model parameters
+        Add layers to the network
         """
-        np.random.seed(99)
+        self.network.append(layer)
+        self.layers_size += 1
 
-        dense_layers = list(get_all_classes(self.network, Dense))
-
-        for idx, layer in enumerate(dense_layers):
-            input_dim = input_shape[1] if idx == 0 else dense_layers[idx - 1].neurons
-            output_dim = layer.neurons
-            activation = layer.activation
-
-            self.architecture.append(
-                {'input_dim': input_dim, 'output_dim': output_dim})
-
-            init_weight_fn = self.xavier_init if activation == 'relu' else self.he_init
-            init_weight = FLOAT_DTYPE(init_weight_fn((input_dim, output_dim)))
-
-            layer.weights = init_weight
-            layer.bias = FLOAT_DTYPE(np.zeros((1, output_dim)))
-
-        return self
-
+    @property
+    def reverse_layers(self):
+        return self.network[::-1]
+    
     def _forwardprop(self, data):
         """
         Performs one full forward pass through network
@@ -82,7 +45,7 @@ class Network:
             layer.input = A_prev
             A_curr = layer.forward()
         return A_curr
-
+    
     def _backprop(self, predicted, actual):
         """
         Performs one full backward pass through network
@@ -96,10 +59,10 @@ class Network:
 
         dA_prev = dscores
 
-        for layer in tqdm(self.reverse_layers()):
+        for layer in tqdm(self.reverse_layers):
             dA_curr = dA_prev
             dA_prev = layer.backward(dA_curr)
-
+            
     def _update(self, lr_reduce):
         """
         Update the model parameters --> lr * gradient
@@ -120,7 +83,7 @@ class Network:
                     layer.db = np.zeros(shape=b.shape)
                 b = b - (lr * layer.db)
                 layer.bias = b
-
+                
     def _get_accuracy(self, predicted, actual):
         """
         Calculate accuracy after each iteration
@@ -139,7 +102,7 @@ class Network:
         data_loss = np.average(no_nan, axis=(0, 1))
 
         return data_loss
-
+    
     def _train_batch(self, epoch, x_batch, y_batch):
         """
         Train the model using SGD for batch
@@ -157,13 +120,6 @@ class Network:
         loss = self._calculate_loss(yhat, y_batch)
 
         return accuracy, loss
-
-    def compile(self, input_shape):
-        """
-        Compile the model to initialise the weights and layers
-        """
-
-        self._init_weights(input_shape)
 
     def train(self, x_train, y_train, epochs):
         """
@@ -203,3 +159,4 @@ class Network:
             if earlyStop.early_stop:
                 print(f"Stopping early at epoch: {i}")
                 break
+    
