@@ -112,7 +112,7 @@ class Conv2d(ConvLayerProperties):
         self.view = asStride(mat_pad, self.size, self.stride)
 
         # the choice of numpy.einsum is due to reshape of self.view being a copy
-        self.z = np.einsum('lmnijk, jkio -> lmno', self.view,
+        self.z = np.einsum('lmnijk, ijko -> lmno', self.view,
                            self.weights, optimize=True, dtype=FLOAT_DTYPE) + self.bias
         return self.z
 

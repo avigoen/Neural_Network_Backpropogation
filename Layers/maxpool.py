@@ -27,7 +27,6 @@ class MaxPoolLayer:
 
     def _build(self, input_shape=None):
         if input_shape is not None:
-
             if self.pad:
                 self.pad_top, self.pad_bottom, self.pad_left, self.pad_right = evaluate_padding(
                     self.input, self.size, self.stride)
